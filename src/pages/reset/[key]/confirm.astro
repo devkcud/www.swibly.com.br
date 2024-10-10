@@ -1,0 +1,91 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import axios from 'axios';
+
+const key = Astro.params.key;
+const data = await Astro.request.formData();
+const lang: 'pt' | 'en' | 'ru' = (data.get('lang')?.toString() as 'pt' | 'en' | 'ru') ?? 'en';
+const password = data.get('password');
+
+let status = 'loading';
+let message = '';
+
+const dict = {
+  resetPassword: {
+    en: 'Reset password',
+    pt: 'Redefinir senha',
+    ru: 'Сбросить пароль'
+  },
+  resetPasswordSuccess: {
+    en: 'Your password has been successfully reset!',
+    pt: 'Sua senha foi redefinida com sucesso!',
+    ru: 'Ваш пароль успешно сброшен!'
+  },
+  resetPasswordError: {
+    en: 'There was an issue resetting your password. Please try again.',
+    pt: 'Houve um problema ao redefinir sua senha. Por favor, tente novamente.',
+    ru: 'Возникла проблема со сбросом пароля. Пожалуйста, попробуйте еще раз.'
+  },
+  redirectMessage: {
+    en: 'You will be redirected in a few seconds...',
+    pt: 'Você será redirecionado em alguns segundos...',
+    ru: 'Вы будете перенаправлены через несколько секунд...'
+  }
+};
+
+async function sendPassword() {
+  if (!password || !key) {
+    status = 'error';
+    message = dict.resetPasswordError[lang];
+    return;
+  }
+
+  try {
+    const response = await axios.post(
+      `${import.meta.env.API_URL}/v1/auth/password/reset/${key}`,
+      {
+        password: password
+      },
+      {
+        headers: {
+          'X-API-KEY': import.meta.env.API_KEY
+        }
+      }
+    );
+
+    if (response.status === 200) {
+      status = 'success';
+      message = dict.resetPasswordSuccess[lang];
+    } else {
+      status = 'error';
+      message = dict.resetPasswordError[lang];
+    }
+  } catch (err) {
+    status = 'error';
+    message = dict.resetPasswordError[lang];
+  }
+}
+
+await sendPassword();
+---
+
+<Layout title={dict.resetPassword[lang]}>
+  <section class="flex flex-col items-center gap-12 w-full text-center">
+    {
+      status === 'loading' ? (
+        <p>Sending password data, please wait...</p>
+      ) : (
+        <div>
+          <p class={status === 'success' ? 'text-success' : 'text-error'}>{message}</p>
+          <p>{dict.redirectMessage[lang]}</p>
+        </div>
+      )
+    }
+  </section>
+
+  <script>
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 3000);
+  </script>
+</Layout>

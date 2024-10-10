@@ -1,0 +1,280 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import axios from 'axios';
+
+const key = Astro.params.key;
+
+if (key === '') {
+  return Astro.redirect('/');
+}
+
+let firstname: string;
+let lastname: string;
+let username: string;
+let profilePicture: string;
+let lang: 'pt' | 'en' | 'ru';
+let expiresAt: Date;
+
+try {
+  const response = await axios.options(`${import.meta.env.API_URL}/v1/auth/password/reset/${key}`, {
+    headers: {
+      'X-API-KEY': import.meta.env.API_KEY
+    }
+  });
+
+  if (response.status !== 202) {
+    return Astro.redirect('/');
+  }
+
+  firstname = response.data.firstname;
+  lastname = response.data.lastname;
+  username = response.data.username;
+  profilePicture = response.data.profile_picture;
+  lang = response.data.lang;
+  expiresAt = new Date(response.data.expires_at);
+} catch (error) {
+  return Astro.redirect('/');
+}
+
+const dict = {
+  resetPassword: {
+    en: 'Reset password',
+    pt: 'Redefinir senha',
+    ru: 'Сбросить пароль'
+  },
+  loggedAs: {
+    en: 'Logged in as',
+    pt: 'Conectado como',
+    ru: 'Вошли как'
+  },
+  welcomeChangePassword: {
+    en: 'Welcome! Please change your password.',
+    pt: 'Bem-vindo! Por favor, altere sua senha.',
+    ru: 'Добро пожаловать! Пожалуйста, измените свой пароль.'
+  },
+  passwordResetExpiresAt: {
+    en: 'Password reset link expires at',
+    pt: 'O link de redefinição de senha expira em',
+    ru: 'Срок действия ссылки для сброса пароля истекает в'
+  },
+  newPassword: {
+    en: 'New password',
+    pt: 'Nova senha',
+    ru: 'Новый пароль'
+  },
+  repeatNewPassword: {
+    en: 'Repeat new password',
+    pt: 'Repita a nova senha',
+    ru: 'Повторите новый пароль'
+  },
+  passwordsDontMatch: {
+    en: 'Passwords do not match',
+    pt: 'As senhas não coincidem',
+    ru: 'Пароли не совпадают'
+  },
+  passwordTooWeak: {
+    en: 'Password does not meet the strength criteria',
+    pt: 'A senha não atende aos critérios de força',
+    ru: 'Пароль не соответствует критериям силы'
+  },
+  confirm: {
+    en: 'Confirm',
+    pt: 'Confirmar',
+    ru: 'Подтвердить'
+  },
+  rules: {
+    minLength: {
+      en: 'At least 7 characters',
+      pt: 'Pelo menos 7 caracteres',
+      ru: 'Минимум 7 символов'
+    },
+    maxLength: {
+      en: 'No more than 48 characters',
+      pt: 'No máximo 48 caracteres',
+      ru: 'Не более 48 символов'
+    },
+    digit: {
+      en: 'At least 1 digit',
+      pt: 'Pelo menos 1 número',
+      ru: 'Минимум 1 цифра'
+    },
+    lowercase: {
+      en: 'At least 1 lowercase letter',
+      pt: 'Pelo menos 1 letra minúscula',
+      ru: 'Минимум 1 строчная буква'
+    },
+    uppercase: {
+      en: 'At least 1 uppercase letter',
+      pt: 'Pelo menos 1 letra maiúscula',
+      ru: 'Минимум 1 заглавная буква'
+    },
+    specialChar: {
+      en: 'At least 1 special character',
+      pt: 'Pelo menos 1 caractere especial',
+      ru: 'Минимум 1 специальный символ'
+    }
+  }
+};
+---
+
+<Layout title={dict.resetPassword[lang]}>
+  <section class="flex flex-col items-center gap-12 *:w-full">
+    <div class="flex items-center gap-4">
+      <img src={profilePicture} alt="Profile Picture" class="size-16 rounded-lg" />
+
+      <div>
+        <p>{dict.loggedAs[lang]}</p>
+
+        <span class="font-bold text-primary text-2xl">{firstname} {lastname}</span>
+        <span class="text-sm">(@{username})</span>
+      </div>
+    </div>
+
+    <form id="resetForm" method="POST" action={`/reset/${key}/confirm`} class="flex flex-col gap-2">
+      <input type="text" name="lang" value={lang} hidden>
+
+      <p>{dict.welcomeChangePassword[lang]}</p>
+      <div class="divider mt-0"></div>
+
+      <label class="input input-sm input-bordered w-full flex items-center gap-2">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 16 16"
+          fill="currentColor"
+          class="h-4 w-4 opacity-70"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M14 6a4 4 0 0 1-4.899 3.899l-1.955 1.955a.5.5 0 0 1-.353.146H5v1.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-2.293a.5.5 0 0 1 .146-.353l3.955-3.955A4 4 0 1 1 14 6Zm-4-2a.75.75 0 0 0 0 1.5.5.5 0 0 1 .5.5.75.75 0 0 0 1.5 0 2 2 0 0 0-2-2Z"
+            clip-rule="evenodd"></path>
+        </svg>
+
+        <input id="password" type="password" name="password" class="grow" placeholder={dict.newPassword[lang]} />
+      </label>
+
+      <label class="input input-sm input-bordered w-full flex items-center gap-2">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 16 16"
+          fill="currentColor"
+          class="h-4 w-4 opacity-70"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M14 6a4 4 0 0 1-4.899 3.899l-1.955 1.955a.5.5 0 0 1-.353.146H5v1.5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-2.293a.5.5 0 0 1 .146-.353l3.955-3.955A4 4 0 1 1 14 6Zm-4-2a.75.75 0 0 0 0 1.5.5.5 0 0 1 .5.5.75.75 0 0 0 1.5 0 2 2 0 0 0-2-2Z"
+            clip-rule="evenodd"></path>
+        </svg>
+
+        <input
+          id="confirmPassword"
+          type="password"
+          class="grow"
+          placeholder={dict.repeatNewPassword[lang]}
+        />
+      </label>
+
+      <ul id="passwordRules" class="text-sm space-y-1 my-4">
+        <li id="ruleMinLength" class="text-red-600">✘ {dict.rules.minLength[lang]}</li>
+        <li id="ruleMaxLength" class="text-green-600">✔ {dict.rules.maxLength[lang]}</li>
+        <li id="ruleDigit" class="text-red-600">✘ {dict.rules.digit[lang]}</li>
+        <li id="ruleLowercase" class="text-red-600">✘ {dict.rules.lowercase[lang]}</li>
+        <li id="ruleUppercase" class="text-red-600">✘ {dict.rules.uppercase[lang]}</li>
+        <li id="ruleSpecialChar" class="text-red-600">✘ {dict.rules.specialChar[lang]}</li>
+      </ul>
+
+      <p id="passwordError" class="text-error hidden">{dict.passwordsDontMatch[lang]}</p>
+
+      <button type="submit" id="submitButton" class="btn btn-primary btn-sm mx-auto" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 20 20">
+          <path fill="currentColor" d="m0 11l2-2l5 5L18 3l2 2L7 18z"></path>
+        </svg>
+
+        {dict.confirm[lang]}
+      </button>
+    </form>
+
+    <div class="divider"></div>
+
+    <p class="text-center">
+      {dict.passwordResetExpiresAt[lang]}
+      <span class="font-bold">
+        {
+          expiresAt.toLocaleDateString(lang, {
+            day: 'numeric',
+            month: 'long',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        }
+      </span>
+    </p>
+  </section>
+
+  <script>
+    const passwordInput = document.getElementById('password')! as HTMLInputElement;
+    const confirmPasswordInput = document.getElementById('confirmPassword')! as HTMLInputElement;
+    const passwordError = document.getElementById('passwordError')!;
+    const submitButton = document.getElementById('submitButton')! as HTMLButtonElement;
+
+    const ruleMinLength = document.getElementById('ruleMinLength')!;
+    const ruleMaxLength = document.getElementById('ruleMaxLength')!;
+    const ruleDigit = document.getElementById('ruleDigit')!;
+    const ruleLowercase = document.getElementById('ruleLowercase')!;
+    const ruleUppercase = document.getElementById('ruleUppercase')!;
+    const ruleSpecialChar = document.getElementById('ruleSpecialChar')!;
+
+    function validatePasswordStrength(password: string) {
+      const hasMinLength = password.length >= 7;
+      const hasMaxLength = password.length <= 48;
+      const hasDigit = /\d/.test(password);
+      const hasUppercase = /[A-Z]/.test(password);
+      const hasLowercase = /[a-z]/.test(password);
+      const hasSpecialChar = /[\W_]/.test(password);
+
+      ruleMinLength.classList.toggle('text-green-600', hasMinLength);
+      ruleMinLength.classList.toggle('text-red-600', !hasMinLength);
+      ruleMaxLength.classList.toggle('text-green-600', hasMaxLength);
+      ruleMaxLength.classList.toggle('text-red-600', !hasMaxLength);
+      ruleDigit.classList.toggle('text-green-600', hasDigit);
+      ruleDigit.classList.toggle('text-red-600', !hasDigit);
+      ruleUppercase.classList.toggle('text-green-600', hasUppercase);
+      ruleUppercase.classList.toggle('text-red-600', !hasUppercase);
+      ruleLowercase.classList.toggle('text-green-600', hasLowercase);
+      ruleLowercase.classList.toggle('text-red-600', !hasLowercase);
+      ruleSpecialChar.classList.toggle('text-green-600', hasSpecialChar);
+      ruleSpecialChar.classList.toggle('text-red-600', !hasSpecialChar);
+
+      ruleMinLength.innerHTML = `${hasMinLength ? '✔' : '✘'} ${ruleMinLength.textContent!.slice(1)}`;
+      ruleMaxLength.innerHTML = `${hasMaxLength ? '✔' : '✘'} ${ruleMaxLength.textContent!.slice(1)}`;
+      ruleDigit.innerHTML = `${hasDigit ? '✔' : '✘'} ${ruleDigit.textContent!.slice(1)}`;
+      ruleUppercase.innerHTML = `${hasUppercase ? '✔' : '✘'} ${ruleUppercase.textContent!.slice(1)}`;
+      ruleLowercase.innerHTML = `${hasLowercase ? '✔' : '✘'} ${ruleLowercase.textContent!.slice(1)}`;
+      ruleSpecialChar.innerHTML = `${hasSpecialChar ? '✔' : '✘'} ${ruleSpecialChar.textContent!.slice(1)}`;
+
+      return (
+        hasMinLength && hasMaxLength && hasDigit && hasUppercase && hasLowercase && hasSpecialChar
+      );
+    }
+
+    function validatePasswords() {
+      const password = passwordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+
+      const isPasswordValid = validatePasswordStrength(password);
+
+      if (password !== confirmPassword || password.length === 0 || confirmPassword.length === 0) {
+        passwordError.classList.remove('hidden');
+        submitButton.disabled = true;
+      } else if (!isPasswordValid) {
+        passwordError.classList.add('hidden');
+        submitButton.disabled = true;
+      } else {
+        passwordError.classList.add('hidden');
+        submitButton.disabled = false;
+      }
+    }
+
+    passwordInput.addEventListener('input', validatePasswords);
+    confirmPasswordInput.addEventListener('input', validatePasswords);
+  </script>
+</Layout>
